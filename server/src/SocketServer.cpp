@@ -65,7 +65,11 @@ void SocketServer::communicateWithClient(){
             if(byte_read == 0){
                 continue;
             }
-            send(*client, "Salut", 5, 0);
+            for(auto other_client = client_sockets_.begin(); client != client_sockets_.end(); ++other_client) {
+                if(*other_client != *client){
+                    send(*other_client, buffer, byte_read, 0);
+                }
+            }
         }
         ++client;
     }
