@@ -1,4 +1,6 @@
 #include "../headers/SocketClient.h"
+#include <sys/socket.h>
+#define BUFFER_SIZE 1024
 
 void SocketClient::error(const char *msg){
     perror(msg);
@@ -44,24 +46,42 @@ void SocketClient::connectToHost(char *hostName){
 }
 
 void SocketClient::exchangeWithHost(){
+    fd_set fds;
     while(true){
-        printf("Please enter the message: ");
-        bzero(buffer,1024);
-        fgets(buffer,1023,stdin);
-        action_output = write(getClientSocket(),buffer,strlen(buffer));
 
-        if (action_output < 0){
-            error("ERROR while writing to socket");
+    FD_ZERO(&fds);
+        FD_SET(STDIN_FILENO, &fds);
+        FD_SET(client_socket, &fds);
+        int max_fd = (client_socket > STDIN_FILENO) ? client_socket : STDIN_FILENO;
+
+        int activity = select(max_fd + 1, &fds, NULL, NULL, NULL);
+        if (activity < 0 && errno != EINTR) {
+            perror("select error");
+            exit(EXIT_FAILURE);
         }
 
-        bzero(buffer,1024);
-        action_output = read(getClientSocket(),buffer,255);
-
-        if (action_output < 0){
-            error("ERROR while reading from socket");
+        if (FD_ISSET(client_socket, &fds)) {
+            memset(buffer, 0, 1024);
+            int action_output = read(client_socket, buffer, 1024);
+            if (action_output > 0) {
+                printf("Server: %s\n", buffer);
+            } else if (action_output == 0) {
+                printf("Server disconnected\n");
+                close(client_socket);
+                break;
+            } else if (action_output < 0 && errno != EWOULDBLOCK && errno != EAGAIN) {
+                perror("ERROR while reading from socket");
+                close(client_socket);
+                break;
+            }else {
+                buffer[action_output] = '\0';
+            }
         }
 
-        printf("%s\n",buffer);
+        if (FD_ISSET(STDIN_FILENO, &fds)) {
+            std::cin.getline(buffer, BUFFER_SIZE);
+            send(client_socket, buffer, strlen(buffer), 0);
+        }
     }
 }
 
