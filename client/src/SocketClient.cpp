@@ -1,6 +1,9 @@
 #include "../headers/SocketClient.h"
 #include "../headers/User.h"
 #include <sys/socket.h>
+#include <ctime>
+#include <sstream>
+#include <iomanip>
 #define BUFFER_SIZE 1024
 
 void SocketClient::error(const char *msg){
@@ -89,7 +92,8 @@ void SocketClient::exchangeWithHost(){
 
         if (FD_ISSET(STDIN_FILENO, &fds)) {
             std::cin.getline(buffer, BUFFER_SIZE);
-            std::string msg = user->getUsername() + ": " + buffer;
+            std::string time = currentTime();
+            std::string msg = time + "-" + user->getUsername() + ": " + buffer;
             send(client_socket, msg.c_str(), strlen(msg.c_str()), 0);
         }
     }
@@ -97,6 +101,16 @@ void SocketClient::exchangeWithHost(){
 
 void SocketClient::closeSocket(){
     close(client_socket);
+}
+
+std::string SocketClient::currentTime() {
+    std::time_t currentTime = std::time(nullptr);
+    std::tm* localTime = std::localtime(&currentTime);
+    std::ostringstream timeStream;
+    timeStream << std::put_time(localTime, "%H:%M");
+    std::string timeString = timeStream.str();
+
+    return timeString;
 }
 
 
