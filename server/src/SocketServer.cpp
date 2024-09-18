@@ -1,7 +1,11 @@
 #include "../headers/SocketServer.h"
+#include <cerrno>
+#include <cstring>
+#include <iostream>
+#include <sys/select.h>
 
 void SocketServer::initializeSelect(){
-    if(select(FD_SETSIZE, &readfds_, nullptr, nullptr, nullptr) < 0){
+    if(select(FD_SETSIZE +1, &readfds_, nullptr, nullptr, nullptr) < 0){
         std::cerr << "Erreur dans le select\n";
         exit(0);
     }
@@ -31,7 +35,6 @@ void SocketServer::acceptConnection(){
     struct sockaddr_in client_address_;
     socklen_t client_len = sizeof(client_address_);
 
-
     if(FD_ISSET(server_socket_, &readfds_)){
         client_socket_ = accept(server_socket_, (struct sockaddr *) &client_address_, &client_len);
         if(client_socket_ < 0){
@@ -39,40 +42,48 @@ void SocketServer::acceptConnection(){
         }
         std::cout << "Connection acceptée depuis " << inet_ntoa(client_address_.sin_addr) << ":" << ntohs(client_address_.sin_port) << std::endl;
 
-        FD_SET(client_socket_, &readfds_);
         client_sockets_.push_back(client_socket_);
     }
 }
 
 
-void SocketServer::resetFds(){
+void SocketServer::prepareFds() {
     FD_ZERO(&readfds_);
+    FD_SET(server_socket_, &readfds_);
+    for (const auto &client : client_sockets_) {
+        FD_SET(client, &readfds_);
+    }
 }
 
 
 void SocketServer::communicateWithClient(){
+
+    char *buffer = new char[1024];
     for(auto client = client_sockets_.begin(); client != client_sockets_.end();){
         if(FD_ISSET(*client, &readfds_)){
-            char buffer[1024];
-            int byte_read = recv(*client, buffer, 1024, 0);
+            memset(buffer, 0, 1024);
+             int byte_read= recv(*client, buffer, 1024, 0);
 
-            if(byte_read < 0){
+            if(byte_read <= 0){
                 close(*client);
                 FD_CLR(*client, &readfds_);
                 client = client_sockets_.erase(client);
                 continue;
             }
-            if(byte_read == 0){
-                continue;
-            }
-            for(auto other_client = client_sockets_.begin(); client != client_sockets_.end(); ++other_client) {
+            buffer[byte_read] = '\0';
+            std::cout << "Received message from client socket: "<< *client << ", bytes read:" <<byte_read << std::endl;
+            for(auto other_client = client_sockets_.begin(); other_client != client_sockets_.end(); ++other_client){
                 if(*other_client != *client){
-                    send(*other_client, buffer, byte_read, 0);
+                    int sent_bytes = send(*other_client, buffer, byte_read, 0);
+                    if(sent_bytes < 0){
+                        perror("Error sending message to client");
+                    }
                 }
             }
         }
         ++client;
     }
+    delete []buffer;
 }
 
 
