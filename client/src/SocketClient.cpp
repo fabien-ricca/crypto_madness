@@ -1,4 +1,5 @@
 #include "../headers/SocketClient.h"
+#include "../headers/User.h"
 #include <sys/socket.h>
 #define BUFFER_SIZE 1024
 
@@ -14,8 +15,7 @@ void SocketClient::createSocket(char *serverPort){
     // create client socket
     client_socket = socket(AF_INET, SOCK_STREAM, 0);
 
-    if (client_socket < 0)
-    {
+    if (client_socket < 0){
         error("ERROR while creating the socket");
     }
 }
@@ -47,9 +47,19 @@ void SocketClient::connectToHost(char *hostName){
 
 void SocketClient::exchangeWithHost(){
     fd_set fds;
+    User *user = new User();
+
     while(true){
 
-    FD_ZERO(&fds);
+        if(!user->getIsConnected()){
+            printf("Saisissez votre Username: ");
+            bzero(buffer, 1024);
+            fgets(buffer, 1023, stdin);
+            buffer[strcspn(buffer, "\n")] = 0;
+            user->connection(buffer);
+        }
+
+        FD_ZERO(&fds);
         FD_SET(STDIN_FILENO, &fds);
         FD_SET(client_socket, &fds);
         int max_fd = (client_socket > STDIN_FILENO) ? client_socket : STDIN_FILENO;
@@ -64,7 +74,7 @@ void SocketClient::exchangeWithHost(){
             memset(buffer, 0, 1024);
             int action_output = read(client_socket, buffer, 1024);
             if (action_output > 0) {
-                printf("Server: %s\n", buffer);
+                printf("%s", buffer);
             } else if (action_output == 0) {
                 printf("Server disconnected\n");
                 close(client_socket);
@@ -80,7 +90,8 @@ void SocketClient::exchangeWithHost(){
 
         if (FD_ISSET(STDIN_FILENO, &fds)) {
             std::cin.getline(buffer, BUFFER_SIZE);
-            send(client_socket, buffer, strlen(buffer), 0);
+            std::string msg = user->getUsername() + ": " + buffer;
+            send(client_socket, msg.c_str(), strlen(msg.c_str()), 0);
         }
     }
 }
