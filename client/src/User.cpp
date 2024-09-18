@@ -19,8 +19,7 @@ bool User::getIsConnected(){
 }
 
 void User::connection(char *username){
-    // PARTIE 0 : Demander un username à chaque démarrage de connexion.
-    // Servira de base pour la connexion de la partie suivante.
+    // PARTIE 1 : Choix entre inscription et connexion.
 
     this->setUsername(username);
     this->setIsConnected(true);
