@@ -31,8 +31,8 @@ public:
     void socketListen();
     void socketBinding();
     void acceptConnection();
-    void resetFds();
     void communicateWithClient();
+    void prepareFds();
 
 
     //***************   Getters and Setters   ***************//
