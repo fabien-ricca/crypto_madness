@@ -49,16 +49,15 @@ void SocketClient::exchangeWithHost(){
     fd_set fds;
     User *user = new User();
 
+    if(!user->getIsConnected()){
+        printf("Saisissez votre Username: ");
+        bzero(buffer, 1024);
+        fgets(buffer, 1023, stdin);
+        buffer[strcspn(buffer, "\n")] = 0;
+        user->connection(buffer);
+    }
+
     while(true){
-
-        if(!user->getIsConnected()){
-            printf("Saisissez votre Username: ");
-            bzero(buffer, 1024);
-            fgets(buffer, 1023, stdin);
-            buffer[strcspn(buffer, "\n")] = 0;
-            user->connection(buffer);
-        }
-
         FD_ZERO(&fds);
         FD_SET(STDIN_FILENO, &fds);
         FD_SET(client_socket, &fds);
@@ -72,9 +71,9 @@ void SocketClient::exchangeWithHost(){
 
         if (FD_ISSET(client_socket, &fds)) {
             memset(buffer, 0, 1024);
-            int action_output = read(client_socket, buffer, 1024);
+            int action_output = recv(client_socket, buffer, 1024, 0);
             if (action_output > 0) {
-                printf("%s", buffer);
+                printf("%s\n", buffer);
             } else if (action_output == 0) {
                 printf("Server disconnected\n");
                 close(client_socket);
