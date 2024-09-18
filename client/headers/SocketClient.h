@@ -30,6 +30,7 @@ public:
     void connectToHost(char *hostName);
     void exchangeWithHost();
     void closeSocket();
+    std::string currentTime();
 
 
     //***************  Getters and Setters  ***************//

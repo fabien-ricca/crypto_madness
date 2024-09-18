@@ -9,27 +9,25 @@ int main(int argc, char *argv[]) {
 
     char *port = argv[1];
 
-    SocketBase *socketBase = new SocketBase();
-    SocketServer *socketServer = new SocketServer();
+    SocketBase socketBase =  SocketBase();
+    SocketServer socketServer =  SocketServer();
 
-    socketBase->createSocket(port);
+    socketBase.createSocket(port);
 
-    socketServer->setServerSocket(socketBase->getSocket());
+    socketServer.setServerSocket(socketBase.getSocket());
 
-    socketServer->setServerAddress(socketBase->getServerPort());
-    socketServer->socketBinding();
-    socketServer->socketListen();
-
-    socketServer->resetFds();
-    socketServer->setFds();
+    socketServer.setServerAddress(socketBase.getServerPort());
+    socketServer.socketBinding();
+    socketServer.socketListen();
 
     while(true){
-        socketServer->initializeSelect();
-        socketServer->acceptConnection();
-        socketServer->communicateWithClient();
+        socketServer.prepareFds();
+        socketServer.initializeSelect();
+        socketServer.acceptConnection();
+        socketServer.communicateWithClient();
     }
 
-    socketBase->closeSocket(socketServer->getServerSocket());
+    socketBase.closeSocket(socketServer.getServerSocket());
 
 
 

@@ -10,7 +10,7 @@ SRCDIR1 = server/src/
 SRCS1 = $(addprefix $(SRCDIR1), $(SRC1))
 OBJ1 = $(SRCS1:$(SRCDIR1)%.cpp=$(OBJDIR1)%.o)
 
-SRC2 = main.cpp SocketClient.cpp
+SRC2 = main.cpp SocketClient.cpp User.cpp
 EXEC2 = clt
 OBJDIR2 = client/obj/
 SRCDIR2 = client/src/

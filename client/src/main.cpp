@@ -12,11 +12,11 @@ int main(int argc, char *argv[])
 
     char *hostname = argv[1], *serverPort = argv[2];
 
-    SocketClient *socketClass = new SocketClient();
-    socketClass->createSocket(serverPort);
-    socketClass->connectToHost(hostname);
-    socketClass->exchangeWithHost();
-    socketClass->closeSocket();
+    SocketClient socketClass = SocketClient();
+    socketClass.createSocket(serverPort);
+    socketClass.connectToHost(hostname);
+    socketClass.exchangeWithHost();
+    socketClass.closeSocket();
 
     return 0;
 }
