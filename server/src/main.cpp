@@ -1,4 +1,5 @@
 #include "../headers/main.h"
+#include "../headers/Authenticate.hpp"
 
 
 int main(int argc, char *argv[]) {
@@ -11,7 +12,9 @@ int main(int argc, char *argv[]) {
 
     SocketBase socketBase =  SocketBase();
     SocketServer socketServer =  SocketServer();
+    Authenticate auth = Authenticate();
 
+    auth.createFilePassword();
     socketBase.createSocket(port);
 
     socketServer.setServerSocket(socketBase.getSocket());
