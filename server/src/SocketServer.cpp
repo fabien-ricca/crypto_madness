@@ -2,6 +2,7 @@
 #include <cerrno>
 #include <cstring>
 #include <iostream>
+#include <string>
 #include <sys/select.h>
 #include <fstream>
 #include <unordered_map>
