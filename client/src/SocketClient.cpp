@@ -52,13 +52,63 @@ void SocketClient::exchangeWithHost(){
     fd_set fds;
     User *user = new User();
 
-    if(!user->getIsConnected()){
-        printf("Saisissez votre Username: ");
+    while(!user->getIsConnected()){
+        printf("Connexion ou inscription (/c ou /i) : ");
         bzero(buffer, 1024);
         fgets(buffer, 1023, stdin);
         buffer[strcspn(buffer, "\n")] = 0;
-        user->connection(buffer);
+        std::string option = buffer;
+
+        // Connexion
+        if (option == "/c") {
+            char username[BUFFER_SIZE];
+            char password[BUFFER_SIZE];
+
+            printf("Username: ");
+            bzero(username, 1024);
+            fgets(username, 1023, stdin);
+            username[strcspn(username, "\n")] = 0;
+
+            printf("Password: ");
+            bzero(password, 1024);
+            fgets(password, 1023, stdin);
+            password[strcspn(password, "\n")] = 0;
+
+            user->authenticate(username, password);
+        }
+
+        // Inscription
+        else if (option == "/i") {
+            char username[BUFFER_SIZE];
+            char password[BUFFER_SIZE];
+            char confirmPassword[BUFFER_SIZE];
+
+            printf("Username: ");
+            bzero(username, 1024);
+            fgets(username, 1023, stdin);
+            username[strcspn(username, "\n")] = 0;
+
+            printf("Password: ");
+            bzero(password, 1024);
+            fgets(password, 1023, stdin);
+            password[strcspn(password, "\n")] = 0;
+
+            printf("Confirm password: ");
+            bzero(confirmPassword, 1024);
+            fgets(confirmPassword, 1023, stdin);
+            confirmPassword[strcspn(confirmPassword, "\n")] = 0;
+
+            // On vérifie que les mdp correspondent
+            if (strcmp(password, confirmPassword) == 0) {
+                // TODO: envoie information vers le serveur.
+                printf("Inscription réussie !\n");
+                user->authenticate(username, password);
+            }
+        }
     }
+
+
+
 
     while(true){
         FD_ZERO(&fds);
@@ -112,6 +162,8 @@ std::string SocketClient::currentTime() {
 
     return timeString;
 }
+
+
 
 
 

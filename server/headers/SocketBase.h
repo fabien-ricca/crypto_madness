@@ -8,6 +8,13 @@
 #define INVALID_SOCKET (SOCKET)(~0)
 #define SOCKET_ERROR (-1)
 
+struct Pack {
+    char username;
+    char password;
+    int entropy;
+    bool state;
+};
+
 class SocketBase {
     private:
         int socket_;

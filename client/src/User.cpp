@@ -18,8 +18,10 @@ bool User::getIsConnected(){
     return this->isConnected;
 }
 
-void User::connection(char *username){
+void User::authenticate(char *username, char *password){
     // PARTIE 1 : Choix entre inscription et connexion.
+    std::cout << "Username -> " << username << std::endl;
+    std::cout << "Password -> " << password << std::endl;
 
     this->setUsername(username);
     this->setIsConnected(true);
