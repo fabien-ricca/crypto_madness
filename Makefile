@@ -3,7 +3,7 @@ CC = g++
 
 CFLAGS = -Wall -Werror -Wextra -g3
 
-SRC1 = main.cpp SocketBase.cpp SocketServer.cpp
+SRC1 = main.cpp SocketBase.cpp SocketServer.cpp Authenticate.cpp
 EXEC1 = srv
 OBJDIR1 = server/obj/
 SRCDIR1 = server/src/
