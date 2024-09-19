@@ -17,5 +17,5 @@ public:
     void setIsConnected(bool connected);
     bool getIsConnected();
 
-    void authenticate(char *username, char *password);
+    void authenticate(char *username);
 };

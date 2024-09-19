@@ -52,63 +52,7 @@ void SocketClient::exchangeWithHost(){
     fd_set fds;
     User *user = new User();
 
-    while(!user->getIsConnected()){
-        printf("Connexion ou inscription (/c ou /i) : ");
-        bzero(buffer, 1024);
-        fgets(buffer, 1023, stdin);
-        buffer[strcspn(buffer, "\n")] = 0;
-        std::string option = buffer;
-
-        // Connexion
-        if (option == "/c") {
-            char username[BUFFER_SIZE];
-            char password[BUFFER_SIZE];
-
-            printf("Username: ");
-            bzero(username, 1024);
-            fgets(username, 1023, stdin);
-            username[strcspn(username, "\n")] = 0;
-
-            printf("Password: ");
-            bzero(password, 1024);
-            fgets(password, 1023, stdin);
-            password[strcspn(password, "\n")] = 0;
-
-            user->authenticate(username, password);
-        }
-
-        // Inscription
-        else if (option == "/i") {
-            char username[BUFFER_SIZE];
-            char password[BUFFER_SIZE];
-            char confirmPassword[BUFFER_SIZE];
-
-            printf("Username: ");
-            bzero(username, 1024);
-            fgets(username, 1023, stdin);
-            username[strcspn(username, "\n")] = 0;
-
-            printf("Password: ");
-            bzero(password, 1024);
-            fgets(password, 1023, stdin);
-            password[strcspn(password, "\n")] = 0;
-
-            printf("Confirm password: ");
-            bzero(confirmPassword, 1024);
-            fgets(confirmPassword, 1023, stdin);
-            confirmPassword[strcspn(confirmPassword, "\n")] = 0;
-
-            // On vérifie que les mdp correspondent
-            if (strcmp(password, confirmPassword) == 0) {
-                // TODO: envoie information vers le serveur.
-                printf("Inscription réussie !\n");
-                user->authenticate(username, password);
-            }
-        }
-    }
-
-
-
+    chooseOption(user);
 
     while(true){
         FD_ZERO(&fds);
@@ -161,6 +105,77 @@ std::string SocketClient::currentTime() {
     std::string timeString = timeStream.str();
 
     return timeString;
+}
+
+
+void SocketClient::chooseOption(User *user){
+    bool checkAuth = false;
+
+    printf("Connexion ou inscription (/c ou /i) : ");
+    bzero(buffer, 1024);
+    fgets(buffer, 1023, stdin);
+    buffer[strcspn(buffer, "\n")] = 0;
+    std::string option = buffer;
+
+    Credentials creds;
+
+    do {
+
+
+        char username[BUFFER_SIZE];
+        printf("Username: ");
+        bzero(username, 1024);
+        fgets(username, 1023, stdin);
+        username[strcspn(username, "\n")] = 0;
+        creds.username = username;
+
+        char password[BUFFER_SIZE];
+        printf("Password: ");
+        bzero(password, 1024);
+        fgets(password, 1023, stdin);
+        password[strcspn(password, "\n")] = 0;
+        creds.password = password;
+
+        // Connexion
+        if (option == "/c") {
+            creds.option = 1;
+        }
+
+            // Inscription
+        else if (option == "/i") {
+            creds.option = 2;
+
+            char confirmPassword[BUFFER_SIZE];
+            printf("Confirm password: ");
+            bzero(confirmPassword, 1024);
+            fgets(confirmPassword, 1023, stdin);
+            confirmPassword[strcspn(confirmPassword, "\n")] = 0;
+
+            // On vérifie que les mdp correspondent
+            if (!strcmp(password, confirmPassword) == 0) {
+                printf("Passwords are not the same !\n\n");
+                continue;
+            }
+        }
+
+        checkAuth = verifyUser(creds);
+        if(checkAuth){
+            user->authenticate(creds.username);
+        }
+    }
+    while(!checkAuth);
+}
+
+
+bool SocketClient::verifyUser(Credentials creds) {
+
+    send(client_socket, &creds, sizeof(creds), 0);
+    recv(client_socket, &response, sizeof(response), 0);
+
+    // Le message de réussite ou d'échec sera affiché.
+    std::cout << response.msg << std::endl;
+
+    return response.state;
 }
 
 

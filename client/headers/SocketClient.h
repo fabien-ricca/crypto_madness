@@ -13,6 +13,7 @@
 #define INVALID_SOCKET (SOCKET)(~0)
 #define SOCKET_ERROR (-1)
 #include "../../server/headers/SocketBase.h"
+#include "../headers/User.h"
 
 
 class SocketClient : public SocketBase{
@@ -23,6 +24,7 @@ private:
     struct sockaddr_in server_addr;
     struct hostent *server;
     char buffer[1024];
+    struct Credentials response;
 
 public:
     void createSocket(char *serverPort);
@@ -32,6 +34,8 @@ public:
     void closeSocket();
 
     std::string currentTime();
+    void chooseOption(User *user);
+    bool verifyUser(Credentials paquet);
 
 
     //***************  Getters and Setters  ***************//
