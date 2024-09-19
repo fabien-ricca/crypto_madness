@@ -8,11 +8,13 @@
 #define INVALID_SOCKET (SOCKET)(~0)
 #define SOCKET_ERROR (-1)
 
-struct Pack {
-    char username;
-    char password;
+struct Credentials {
+    char *username;
+    char *password;
     int entropy;
     bool state;
+    int option; // 1 -> connexion     2 -> inscription
+    char msg;
 };
 
 class SocketBase {
