@@ -2,6 +2,7 @@
 #include <cerrno>
 #include <cstring>
 #include <iostream>
+#include <string>
 #include <sys/select.h>
 
 void SocketServer::initializeSelect(){
@@ -62,7 +63,7 @@ void SocketServer::communicateWithClient(){
     for(auto client = client_sockets_.begin(); client != client_sockets_.end();){
         if(FD_ISSET(*client, &readfds_)){
             memset(buffer, 0, 1024);
-             int byte_read= recv(*client, buffer, 1024, 0);
+            int byte_read= recv(*client, buffer, 1024, 0);
 
             if(byte_read <= 0){
                 close(*client);
