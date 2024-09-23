@@ -1,4 +1,5 @@
 #include "../headers/SocketServer.h"
+#include "../headers/Utils.hpp"
 #include <cerrno>
 #include <cstring>
 #include <iostream>
