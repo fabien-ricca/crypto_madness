@@ -1,5 +1,7 @@
 #include "../headers/SocketClient.h"
 #include "../headers/User.h"
+#include <cstring>
+#include <iostream>
 #include <sys/socket.h>
 #include <ctime>
 #include <sstream>
@@ -112,7 +114,7 @@ void SocketClient::chooseOption(User *user){
     bool checkAuth = false;
 
     printf("Connexion ou inscription (/c ou /i) : ");
-    bzero(buffer, 1024);
+    memset(buffer, 0, 1024);
     fgets(buffer, 1023, stdin);
     buffer[strcspn(buffer, "\n")] = 0;
     std::string option = buffer;
@@ -120,21 +122,19 @@ void SocketClient::chooseOption(User *user){
     Credentials creds;
 
     do {
-
-
         char username[BUFFER_SIZE];
         printf("Username: ");
-        bzero(username, 1024);
-        fgets(username, 1023, stdin);
+        memset(username, 0, BUFFER_SIZE);
+        fgets(username, BUFFER_SIZE-1, stdin);
         username[strcspn(username, "\n")] = 0;
-        creds.username = username;
+        std::strncpy(creds.username, username, 50);
 
         char password[BUFFER_SIZE];
         printf("Password: ");
-        bzero(password, 1024);
-        fgets(password, 1023, stdin);
+        memset(password, 0, BUFFER_SIZE);
+        fgets(password, BUFFER_SIZE-1, stdin);
         password[strcspn(password, "\n")] = 0;
-        creds.password = password;
+        std::strncpy(creds.password, password, 50);
 
         // Connexion
         if (option == "/c") {
@@ -147,12 +147,14 @@ void SocketClient::chooseOption(User *user){
 
             char confirmPassword[BUFFER_SIZE];
             printf("Confirm password: ");
-            bzero(confirmPassword, 1024);
-            fgets(confirmPassword, 1023, stdin);
+            bzero(confirmPassword, BUFFER_SIZE);
+            fgets(confirmPassword, BUFFER_SIZE-1, stdin);
             confirmPassword[strcspn(confirmPassword, "\n")] = 0;
 
+            std::cout << password << std::endl;
+            std::cout << confirmPassword << std::endl;
             // On vérifie que les mdp correspondent
-            if (!strcmp(password, confirmPassword) == 0) {
+            if (strcmp(password, confirmPassword) != 0) {
                 printf("Passwords are not the same !\n\n");
                 continue;
             }
@@ -169,8 +171,13 @@ void SocketClient::chooseOption(User *user){
 
 bool SocketClient::verifyUser(Credentials creds) {
 
-    send(client_socket, &creds, sizeof(creds), 0);
-    recv(client_socket, &response, sizeof(response), 0);
+    if(send(client_socket, &creds, sizeof(creds), 0) < 0) {
+        std::cerr << "Problem sending packet creds to verify User. " << std::strerror(errno) << std::endl;
+    }
+    if(recv(client_socket, &response, sizeof(response), 0) < 0) {
+        std::cerr << "Problem receiving packet creds to verify User. " << std::strerror(errno) << std::endl;
+
+    }
 
     // Le message de réussite ou d'échec sera affiché.
     std::cout << response.msg << std::endl;
