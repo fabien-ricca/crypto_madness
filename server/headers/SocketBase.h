@@ -9,8 +9,8 @@
 #define SOCKET_ERROR (-1)
 
 struct Credentials {
-    char *username;
-    char *password;
+    char username[50];
+    char password[50];
     int entropy;
     bool state;
     int option; // 1 -> connexion     2 -> inscription
