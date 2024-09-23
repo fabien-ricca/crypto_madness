@@ -1,7 +1,6 @@
 #include "../headers/main.h"
 #include "../headers/Utils.hpp"
 
-
 int main(int argc, char *argv[]) {
 
     if(argc < 1){
