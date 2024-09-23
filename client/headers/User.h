@@ -17,5 +17,5 @@ public:
     void setIsConnected(bool connected);
     bool getIsConnected();
 
-    void authenticate(char *username);
+    void authenticate(std::string username);
 };
