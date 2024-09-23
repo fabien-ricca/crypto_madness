@@ -1,3 +1,0 @@
-lea:mdp
-user:azer
-utilisateur:querty
