@@ -18,7 +18,7 @@ bool User::getIsConnected(){
     return this->isConnected;
 }
 
-void User::authenticate(char *username){
+void User::authenticate(std::string username){
     // PARTIE 1 : Création du user aprés authenticfication.
     this->setUsername(username);
     this->setIsConnected(true);
