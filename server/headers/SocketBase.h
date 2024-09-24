@@ -14,7 +14,7 @@ struct Credentials {
     int entropy;
     bool state;
     int option; // 1 -> connexion     2 -> inscription
-    char *msg;
+    char msg[50];
 };
 
 class SocketBase {

@@ -112,6 +112,7 @@ void SocketServer::connectClient() {
                         std::cout << "wrong password" << std::endl;
                         memset(&creds, 0, sizeof(creds));
                         std::strncpy(creds.msg, "wrong password",50);
+                        creds.state = false;
                         if(send(client_socket_, &creds, sizeof(creds), 0)) {
                             std::cerr << "Problem sending creds packet for wrong password" << std::strerror(errno) << std::endl;
                             return;
@@ -121,6 +122,7 @@ void SocketServer::connectClient() {
                         std::cout << "login ok" << std::endl;
                         memset(&creds, 0, sizeof(creds));
                         std::strncpy(creds.msg, "login ok", 50);
+                        creds.state = true;
                         if(send(client_socket_, &creds, sizeof(creds), 0) < 0) {
                             std::cerr << "Problem sending creds packet for login" << std::strerror(errno) << std::endl;
                             break;
@@ -129,6 +131,7 @@ void SocketServer::connectClient() {
                 }
                 else{
                     strcpy(creds.msg, "username not found");
+                    creds.state = false;
                     if(send(client_socket_, &creds, sizeof(creds), 0) < 0) {
                         std::cerr << "Problem sending creds packet for username not found" << std::strerror(errno) << std::endl;
                         return;
