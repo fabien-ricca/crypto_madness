@@ -60,10 +60,8 @@ void SocketServer::prepareFds() {
     }
 }
 
+void SocketServer::connectClient() {
 
-void SocketServer::communicateWithClient(){
-
-    char *buffer = new char[1024];
     Credentials creds;
 
     for(auto client = client_sockets_.begin(); client != client_sockets_.end();){
@@ -81,7 +79,6 @@ void SocketServer::communicateWithClient(){
 
             std::cout << "Received message from client socket: "<< *client << ", bytes read:" <<byte_read << std::endl;
 
-
             // récup les infos du doc
             std::unordered_map<std::string, std::string> credMap;
             std::string separator = ":";
@@ -97,32 +94,36 @@ void SocketServer::communicateWithClient(){
                 size_t separatorPos = line.find(separator);
 
                 if (separatorPos != std::string::npos) {
-                    std::string name = line.substr(0, separatorPos);
-                    std::string pass = line.substr(separatorPos + separator.length());
+                    std::string username = line.substr(0, separatorPos);
+                    std::string password = line.substr(separatorPos + separator.length());
+                    credMap[username] = password;
                 }
             }
 
             std::cout << "work getline after" << std::endl;
 
             bool isUsernameInFile = credMap.find(creds.username) != credMap.end();
-
             if(creds.option == 1){ // connexion
             std::cout << "work creds.option" << std::endl;
                 // si oui vérif que le mdp soit le même
                 if(isUsernameInFile){
                     std::cout << "work if usernameInFile" << std::endl;
-                    if(credMap[creds.username] != creds.password){
-                        std::cout << "work if usernameInFile" << std::endl;
-                        strcpy(creds.msg, "wrong password");
+                    if(credMap.at(creds.username) != creds.password){
+                        std::cout << "wrong password" << std::endl;
+                        memset(&creds, 0, sizeof(creds));
+                        std::strncpy(creds.msg, "wrong password",50);
                         if(send(client_socket_, &creds, sizeof(creds), 0)) {
                             std::cerr << "Problem sending creds packet for wrong password" << std::strerror(errno) << std::endl;
+                            return;
                         }
-                        return;
                     }
                     else{
-                        strcpy(creds.msg, "login ok");
+                        std::cout << "login ok" << std::endl;
+                        memset(&creds, 0, sizeof(creds));
+                        std::strncpy(creds.msg, "login ok", 50);
                         if(send(client_socket_, &creds, sizeof(creds), 0) < 0) {
                             std::cerr << "Problem sending creds packet for login" << std::strerror(errno) << std::endl;
+                            break;
                         }
                     }
                 }
@@ -130,32 +131,47 @@ void SocketServer::communicateWithClient(){
                     strcpy(creds.msg, "username not found");
                     if(send(client_socket_, &creds, sizeof(creds), 0) < 0) {
                         std::cerr << "Problem sending creds packet for username not found" << std::strerror(errno) << std::endl;
+                        return;
                     }
-                    return;
                 }
             }
             else{ 
 
             }
+        }
+        client++;
+    }
+}
 
 
+void SocketServer::communicateWithClient(){
+    connectClient();
 
-            std::cout << "Received struct:" << creds.username << std::endl;
+    char *buffer = new char[1024];
+    for(auto client = client_sockets_.begin(); client != client_sockets_.end();){
+        if(FD_ISSET(*client, &readfds_)){
+            memset(buffer, 0, 1024);
+             int byte_read= recv(*client, buffer, 1024, 0);
 
+            if(byte_read <= 0){
+                close(*client);
+                FD_CLR(*client, &readfds_);
+                client = client_sockets_.erase(client);
+                continue;
+            }
+            buffer[byte_read] = '\0';
+            std::cout << "Received message from client socket: "<< *client << ", bytes read:" <<byte_read << std::endl;
             for(auto other_client = client_sockets_.begin(); other_client != client_sockets_.end(); ++other_client){
                 if(*other_client != *client){
                     int sent_bytes = send(*other_client, buffer, byte_read, 0);
-
                     if(sent_bytes < 0){
                         perror("Error sending message to client");
                     }
                 }
             }
         }
-
         ++client;
     }
-
     delete []buffer;
 }
 
