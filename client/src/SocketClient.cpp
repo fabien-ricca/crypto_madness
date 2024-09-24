@@ -6,6 +6,9 @@
 #include <ctime>
 #include <sstream>
 #include <iomanip>
+#include <cmath>
+#include <vector>
+#include <algorithm>
 #define BUFFER_SIZE 1024
 
 void SocketClient::error(const char *msg){
@@ -130,11 +133,15 @@ void SocketClient::chooseOption(User *user){
         std::strncpy(creds.username, username, 50);
 
         char password[BUFFER_SIZE];
-        printf("Password: ");
-        memset(password, 0, BUFFER_SIZE);
-        fgets(password, BUFFER_SIZE-1, stdin);
-        password[strcspn(password, "\n")] = 0;
-        std::strncpy(creds.password, password, 50);
+        char *passwordGood = this->AskPassword();
+        std::strncpy(password, passwordGood, 64);
+
+//        char password[BUFFER_SIZE];
+//        printf("Password: ");
+//        memset(password, 0, BUFFER_SIZE);
+//        fgets(password, BUFFER_SIZE-1, stdin);
+//        password[strcspn(password, "\n")] = 0;
+//        std::strncpy(creds.password, password, 50);
 
         // Connexion
         if (option == "/c") {
@@ -183,6 +190,48 @@ bool SocketClient::verifyUser(Credentials creds) {
     std::cout << response.msg << std::endl;
 
     return response.state;
+}
+
+char* SocketClient::AskPassword(){
+    char* password = new char[64];
+    while(true){
+        printf("Password: ");
+        std::fill(password, password + 64, 0);
+        fgets(password, 64, stdin);
+        password[strcspn(password, "\n")] = 0;
+
+        // si le mdp est un des 10 plus utilisés, ne pas l'accepter
+        std::vector<const char*> mostUsed = {"123456", "123456789", "qwerty", "password", "12345",
+                                             "qwerty123", "1q2w3e", "12345678", "111111", "1234567890"};
+
+        bool isMostUsed = false;
+        for(const char* commonPassword : mostUsed){
+            if(strcmp(password, commonPassword) == 0){
+                isMostUsed = true;
+                break;
+            }
+        }
+
+        if(isMostUsed){
+            std::cout << "Your password is one of the 10 most used. Please choose another one." << std::endl;
+            continue;
+        }
+
+        // calculer l'entropie
+        double R = 94;
+        auto L = (double)strlen(password); // prendre la longueur du mdp
+
+        double E = L * log2(R);
+
+        std::cout<<E<<std::endl;
+
+        if(E > 60){
+            return password;
+        }
+        else{
+            std::cout << "Your password is weak, please choose another one." << std::endl;
+        }
+    }
 }
 
 
