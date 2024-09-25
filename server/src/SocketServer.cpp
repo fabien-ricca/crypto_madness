@@ -103,6 +103,7 @@ void SocketServer::connectClient() {
             std::cout << "work getline after" << std::endl;
 
             bool isUsernameInFile = credMap.find(creds.username) != credMap.end();
+            // Connexion
             if(creds.option == 1){ // connexion
             std::cout << "work creds.option" << std::endl;
                 // si oui vérif que le mdp soit le même
@@ -138,7 +139,30 @@ void SocketServer::connectClient() {
                     }
                 }
             }
-            else{ 
+
+            // Inscription
+            else if(creds.option == 2){
+                std::ofstream fichier("server/actually_safe_this_time.txt", std::ios::app);
+                if(isUsernameInFile){
+                    std::strncpy(creds.msg, "username already exists", 50);
+                    creds.state = false;
+                    if(send(client_socket_, &creds, sizeof(creds), 0) < 0) {
+                        std::cerr << "Problem sending creds packet for username already exists" << std::strerror(errno) << std::endl;
+                    }
+                }
+                if(!fichier.is_open()){
+                    std::cerr << "Erreur d'ouverture du fichier" << std::endl;
+                    std::strncpy(creds.msg, "error opening file", 50);
+                    creds.state = false;
+                } else if(!isUsernameInFile){ {
+                    fichier << creds.username << ":" << creds.password << "\n" << std::endl;
+                    std::strncpy(creds.msg, "registration successful", 50);
+                    creds.state = true;
+                }
+                fichier.close();
+                if(send(client_socket_, &creds, sizeof(creds), 0) < 0) {
+                    std::cerr << "Problem sending creds packet for registration" << std::strerror(errno) << std::endl;
+                }
 
             }
         }
