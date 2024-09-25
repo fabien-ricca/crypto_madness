@@ -26,6 +26,7 @@ int main(int argc, char *argv[]) {
         socketServer.prepareFds();
         socketServer.initializeSelect();
         socketServer.acceptConnection();
+        socketServer.connectClient();
         socketServer.communicateWithClient();
     }
 
