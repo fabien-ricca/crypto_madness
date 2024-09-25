@@ -185,7 +185,7 @@ bool SocketClient::verifyUser(Credentials creds) {
 }
 
 char* SocketClient::AskPassword(){
-    char* password = new char[64];
+    char* password = new char[PASSWORD_SIZE];
     while(true){
         printf("Password: ");
         std::fill(password, password + PASSWORD_SIZE, 0);
