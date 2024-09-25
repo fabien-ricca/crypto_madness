@@ -106,7 +106,6 @@ void SocketServer::connectClient() {
             // Connexion
             if(creds.option == 1){ // connexion
             std::cout << "work creds.option" << std::endl;
-                // si oui vérif que le mdp soit le même
                 if(isUsernameInFile){
                     std::cout << "work if usernameInFile" << std::endl;
                     if(credMap.at(creds.username) != creds.password){
@@ -126,7 +125,7 @@ void SocketServer::connectClient() {
                         creds.state = true;
                         if(send(client_socket_, &creds, sizeof(creds), 0) < 0) {
                             std::cerr << "Problem sending creds packet for login" << std::strerror(errno) << std::endl;
-                            break;
+                            return;
                         }
                     }
                 }
