@@ -37,6 +37,7 @@ public:
     std::string currentTime();
     void chooseOption(User *user);
     bool verifyUser(Credentials paquet);
+    bool isValidPassword(const std::string& password);
 
 
     //***************  Getters and Setters  ***************//

@@ -158,13 +158,12 @@ void SocketClient::chooseOption(User *user){
             fgets(confirmPassword, BUFFER_SIZE-1, stdin);
             confirmPassword[strcspn(confirmPassword, "\n")] = 0;
 
-            std::cout << password << std::endl;
-            std::cout << confirmPassword << std::endl;
             // On vérifie que les mdp correspondent
             if (strcmp(password, confirmPassword) != 0) {
                 printf("Passwords are not the same !\n\n");
                 continue;
             }
+            creds.password = password;
         }
 
         checkAuth = verifyUser(creds);
@@ -199,6 +198,13 @@ char* SocketClient::AskPassword(){
         std::fill(password, password + 64, 0);
         fgets(password, 64, stdin);
         password[strcspn(password, "\n")] = 0;
+
+
+        if (!isValidPassword(password)) {
+            std::cout << "Password must be at least 6 characters long, contain at least one uppercase letter, one lowercase letter, one digit, and one special character." << std::endl;
+            continue;
+        }
+
 
         // si le mdp est un des 10 plus utilisés, ne pas l'accepter
         // TODO: Peut être mettre les mdp dans un fichier csv ou txt et le parcourir,
@@ -236,6 +242,19 @@ char* SocketClient::AskPassword(){
     }
 }
 
+bool SocketClient::isValidPassword(const std::string& password) {
+    if (password.length() < 6) return false;
+
+    bool hasUpper = false, hasLower = false, hasDigit = false, hasSpecial = false;
+    for (char c : password) {
+        if (std::isupper(c)) hasUpper = true;
+        else if (std::islower(c)) hasLower = true;
+        else if (std::isdigit(c)) hasDigit = true;
+        else if (std::ispunct(c)) hasSpecial = true;
+    }
+
+    return hasUpper && hasLower && hasDigit && hasSpecial;
+}
 
 
 

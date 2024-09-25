@@ -142,6 +142,7 @@ void SocketServer::connectClient() {
 
             // Inscription
             else if(creds.option == 2){
+                std::cout << creds.password << std::endl;
                 std::ofstream fichier("server/actually_safe_this_time.txt", std::ios::app);
                 if(isUsernameInFile){
                     std::strncpy(creds.msg, "username already exists", 50);
@@ -154,7 +155,8 @@ void SocketServer::connectClient() {
                     std::cerr << "Erreur d'ouverture du fichier" << std::endl;
                     std::strncpy(creds.msg, "error opening file", 50);
                     creds.state = false;
-                } else if(!isUsernameInFile){ {
+                }
+                else if(!isUsernameInFile){
                     fichier << creds.username << ":" << creds.password << "\n" << std::endl;
                     std::strncpy(creds.msg, "registration successful", 50);
                     creds.state = true;
