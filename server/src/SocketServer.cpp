@@ -63,11 +63,14 @@ void SocketServer::prepareFds() {
 void SocketServer::connectClient() {
 
     Credentials creds;
+    Utils utils = Utils();
+    std::string hashedPassword;
 
     for(auto client = client_sockets_.begin(); client != client_sockets_.end();){
         if(FD_ISSET(*client, &readfds_)){
             memset(&creds, 0, sizeof(creds));
             int byte_read= recv(*client, &creds, sizeof(creds), 0);
+            hashedPassword = utils.md5HashPassword(std::string(creds.password));
 
             if(byte_read <= 0){
                 std::cerr << "Error receiving credential packet. " << std::strerror(errno);
@@ -95,8 +98,8 @@ void SocketServer::connectClient() {
 
                 if (separatorPos != std::string::npos) {
                     std::string username = line.substr(0, separatorPos);
-                    std::string password = line.substr(separatorPos + separator.length());
-                    credMap[username] = password;
+                    std::string fileHashedpassword = line.substr(separatorPos + separator.length());
+                    credMap[username] = fileHashedpassword ;
                 }
             }
 
@@ -108,7 +111,7 @@ void SocketServer::connectClient() {
             std::cout << "work creds.option" << std::endl;
                 if(isUsernameInFile){
                     std::cout << "work if usernameInFile" << std::endl;
-                    if(credMap.at(creds.username) != creds.password){
+                    if(credMap.at(creds.username) != hashedPassword){
                         std::cout << "wrong password" << std::endl;
                         memset(&creds, 0, sizeof(creds));
                         std::strncpy(creds.msg, "wrong password",50);
@@ -156,7 +159,7 @@ void SocketServer::connectClient() {
                     creds.state = false;
                 }
                 else if(!isUsernameInFile){
-                    fichier << creds.username << ":" << creds.password << "\n" << std::endl;
+                    fichier << creds.username << ":" << hashedPassword << std::endl;
                     std::strncpy(creds.msg, "registration successful", 50);
                     creds.state = true;
                 }
