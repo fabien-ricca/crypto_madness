@@ -132,16 +132,9 @@ void SocketClient::chooseOption(User *user){
         username[strcspn(username, "\n")] = 0;
         std::strncpy(creds.username, username, 50);
 
-        char password[BUFFER_SIZE];
+        char password[PASSWORD_SIZE];
         char *passwordGood = this->AskPassword();
-        std::strncpy(password, passwordGood, 64);
-
-//        char password[BUFFER_SIZE];
-//        printf("Password: ");
-//        memset(password, 0, BUFFER_SIZE);
-//        fgets(password, BUFFER_SIZE-1, stdin);
-//        password[strcspn(password, "\n")] = 0;
-//        std::strncpy(creds.password, password, 50);
+        std::strncpy(password, passwordGood, PASSWORD_SIZE);
 
         // Connexion
         if (option == "/c") {
@@ -163,7 +156,7 @@ void SocketClient::chooseOption(User *user){
                 printf("Passwords are not the same !\n\n");
                 continue;
             }
-            creds.password = password;
+            std::strncpy(creds.password, password, PASSWORD_SIZE);
         }
 
         checkAuth = verifyUser(creds);
@@ -195,8 +188,8 @@ char* SocketClient::AskPassword(){
     char* password = new char[64];
     while(true){
         printf("Password: ");
-        std::fill(password, password + 64, 0);
-        fgets(password, 64, stdin);
+        std::fill(password, password + PASSWORD_SIZE, 0);
+        fgets(password, PASSWORD_SIZE, stdin);
         password[strcspn(password, "\n")] = 0;
 
 
