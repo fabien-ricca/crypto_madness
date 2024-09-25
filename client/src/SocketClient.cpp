@@ -132,17 +132,24 @@ void SocketClient::chooseOption(User *user){
         username[strcspn(username, "\n")] = 0;
         std::strncpy(creds.username, username, 50);
 
-        char password[PASSWORD_SIZE];
-        char *passwordGood = this->AskPassword();
-        std::strncpy(password, passwordGood, PASSWORD_SIZE);
-
         // Connexion
         if (option == "/c") {
+            char password[PASSWORD_SIZE];
+            printf("Password: ");
+            memset(password, 0, PASSWORD_SIZE);
+            fgets(password, PASSWORD_SIZE-1, stdin);
+            password[strcspn(password, "\n")] = 0;
+            std::strncpy(creds.password, password, 50);
+
             creds.option = 1;
         }
 
             // Inscription
         else if (option == "/i") {
+            char password[PASSWORD_SIZE];
+            char *passwordGood = this->AskPassword();
+            std::strncpy(password, passwordGood, PASSWORD_SIZE);
+
             creds.option = 2;
 
             char confirmPassword[BUFFER_SIZE];
