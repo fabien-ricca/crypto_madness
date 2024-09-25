@@ -201,6 +201,8 @@ char* SocketClient::AskPassword(){
         password[strcspn(password, "\n")] = 0;
 
         // si le mdp est un des 10 plus utilisés, ne pas l'accepter
+        // TODO: Peut être mettre les mdp dans un fichier csv ou txt et le parcourir,
+        //  comme ça on peut en rajouter et en enlever facilement ?
         std::vector<const char*> mostUsed = {"123456", "123456789", "qwerty", "password", "12345",
                                              "qwerty123", "1q2w3e", "12345678", "111111", "1234567890"};
 
