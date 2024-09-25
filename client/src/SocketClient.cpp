@@ -57,9 +57,7 @@ void SocketClient::exchangeWithHost(){
     fd_set fds;
     User *user = new User();
 
-    if(user->getIsConnected() == false) {
-        chooseOption(user);
-    }
+    chooseOption(user);
 
     while(true){
         FD_ZERO(&fds);
