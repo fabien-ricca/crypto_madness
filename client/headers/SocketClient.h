@@ -25,6 +25,7 @@ private:
     struct hostent *server;
     char buffer[1024];
     struct Credentials response;
+    char* AskPassword();
 
 public:
     void createSocket(char *serverPort);
@@ -36,6 +37,7 @@ public:
     std::string currentTime();
     void chooseOption(User *user);
     bool verifyUser(Credentials paquet);
+    bool isValidPassword(const std::string& password);
 
 
     //***************  Getters and Setters  ***************//

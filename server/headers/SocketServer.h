@@ -33,6 +33,7 @@ public:
     void acceptConnection();
     void communicateWithClient();
     void prepareFds();
+    void connectClient();
 
 
     //***************   Getters and Setters   ***************//

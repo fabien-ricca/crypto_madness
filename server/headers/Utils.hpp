@@ -7,22 +7,26 @@
 #include <cstddef>
 #include <filesystem>
 #include <unistd.h>
+#include <sodium.h>
+#include <openssl/md5.h>
+#include <sys/types.h>
 
 
-class Authenticate {
+class Utils {
 private:
     std::string str_;
 
 public:
-    Authenticate();
-    Authenticate(const Authenticate&other);
-    ~Authenticate();
-    Authenticate& operator=(const Authenticate&other);
+    Utils();
+    Utils(const Utils&other);
+    ~Utils();
+    Utils& operator=(const Utils&other);
 
     std::string hexaToString(const std::string& hex);
     std::string stringToHexa(const std::string& str);
     std::string getPathToExe();
     int createFilePassword();
+    std::string md5HashPassword(std::string str);
 
     /************GETTERs & SETTERS*************/
 

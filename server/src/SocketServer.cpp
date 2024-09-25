@@ -1,7 +1,9 @@
 #include "../headers/SocketServer.h"
+#include "../headers/Utils.hpp"
 #include <cerrno>
 #include <cstring>
 #include <iostream>
+#include <ostream>
 #include <string>
 #include <sys/select.h>
 #include <fstream>
@@ -58,30 +60,31 @@ void SocketServer::prepareFds() {
     }
 }
 
+void SocketServer::connectClient() {
 
-void SocketServer::communicateWithClient(){
-
-    char *buffer = new char[1024];
     Credentials creds;
+    Utils utils = Utils();
+    std::string hashedPassword;
 
     for(auto client = client_sockets_.begin(); client != client_sockets_.end();){
         if(FD_ISSET(*client, &readfds_)){
-            memset(buffer, 0, 1024);
+            memset(&creds, 0, sizeof(creds));
             int byte_read= recv(*client, &creds, sizeof(creds), 0);
+            hashedPassword = utils.md5HashPassword(std::string(creds.password));
 
             if(byte_read <= 0){
+                std::cerr << "Error receiving credential packet. " << std::strerror(errno);
                 close(*client);
                 FD_CLR(*client, &readfds_);
                 client = client_sockets_.erase(client);
                 continue;
             }
 
-            buffer[byte_read] = '\0';
             std::cout << "Received message from client socket: "<< *client << ", bytes read:" <<byte_read << std::endl;
 
             // récup les infos du doc
-            std::unordered_map<char*, char*> credMap;
-            const char *separator = ":";
+            std::unordered_map<std::string, std::string> credMap;
+            std::string separator = ":";
 
             std::ifstream fichier("server/actually_safe_this_time.txt");
             std::string line;
@@ -91,61 +94,115 @@ void SocketServer::communicateWithClient(){
             }
 
             while(std::getline(fichier, line)){
-                char * name = strtok(line.data(), separator);
-                char * pass = strtok(NULL, separator);
+                size_t separatorPos = line.find(separator);
 
-                credMap[name] = pass;
-
-                delete []name;
-                delete []pass;
+                if (separatorPos != std::string::npos) {
+                    std::string username = line.substr(0, separatorPos);
+                    std::string fileHashedpassword = line.substr(separatorPos + separator.length());
+                    credMap[username] = fileHashedpassword ;
+                }
             }
 
-            // vérif si le username existe
-            bool isUsernameInFile = credMap.find(creds.username) != credMap.end();
+            std::cout << "work getline after" << std::endl;
 
+            bool isUsernameInFile = credMap.find(creds.username) != credMap.end();
+            // Connexion
             if(creds.option == 1){ // connexion
-                // si oui vérif que le mdp soit le même
+            std::cout << "work creds.option" << std::endl;
                 if(isUsernameInFile){
-                    if(credMap.at(creds.username) != creds.password){
-                        strcpy(creds.msg, "wrong password");
-                        send(client_socket_, &creds, sizeof(creds), 0);
-                        return;
+                    std::cout << "work if usernameInFile" << std::endl;
+                    if(credMap.at(creds.username) != hashedPassword){
+                        std::cout << "wrong password" << std::endl;
+                        memset(&creds, 0, sizeof(creds));
+                        std::strncpy(creds.msg, "wrong password",50);
+                        creds.state = false;
+                        if(send(client_socket_, &creds, sizeof(creds), 0)) {
+                            std::cerr << "Problem sending creds packet for wrong password" << std::strerror(errno) << std::endl;
+                            return;
+                        }
                     }
                     else{
-                        strcpy(creds.msg, "login ok");
-                        send(client_socket_, &creds, sizeof(creds), 0);
+                        std::cout << "login ok" << std::endl;
+                        memset(&creds, 0, sizeof(creds));
+                        std::strncpy(creds.msg, "login ok", 50);
+                        creds.state = true;
+                        if(send(client_socket_, &creds, sizeof(creds), 0) < 0) {
+                            std::cerr << "Problem sending creds packet for login" << std::strerror(errno) << std::endl;
+                            return;
+                        }
                     }
                 }
                 else{
                     strcpy(creds.msg, "username not found");
-                    send(client_socket_, &creds, sizeof(creds), 0);
-                    return;
+                    creds.state = false;
+                    if(send(client_socket_, &creds, sizeof(creds), 0) < 0) {
+                        std::cerr << "Problem sending creds packet for username not found" << std::strerror(errno) << std::endl;
+                        return;
+                    }
                 }
             }
-            else{ // inscription
-                // si ok hasher le mdp
-                // et enregistrer user dans le doc
-                // envoyer message ok au client
+
+            // Inscription
+            else if(creds.option == 2){
+                std::cout << creds.password << std::endl;
+                std::ofstream fichier("server/actually_safe_this_time.txt", std::ios::app);
+                if(isUsernameInFile){
+                    std::strncpy(creds.msg, "username already exists", 50);
+                    creds.state = false;
+                    if(send(client_socket_, &creds, sizeof(creds), 0) < 0) {
+                        std::cerr << "Problem sending creds packet for username already exists" << std::strerror(errno) << std::endl;
+                    }
+                }
+                if(!fichier.is_open()){
+                    std::cerr << "Erreur d'ouverture du fichier" << std::endl;
+                    std::strncpy(creds.msg, "error opening file", 50);
+                    creds.state = false;
+                }
+                else if(!isUsernameInFile){
+                    fichier << creds.username << ":" << hashedPassword << std::endl;
+                    std::strncpy(creds.msg, "registration successful", 50);
+                    creds.state = true;
+                }
+                fichier.close();
+                if(send(client_socket_, &creds, sizeof(creds), 0) < 0) {
+                    std::cerr << "Problem sending creds packet for registration" << std::strerror(errno) << std::endl;
+                }
+
             }
+        }
+        client++;
+    }
+}
 
 
+void SocketServer::communicateWithClient(){
+    connectClient();
 
-            std::cout << "Received struct:" << creds.username << std::endl;
+    char *buffer = new char[1024];
+    for(auto client = client_sockets_.begin(); client != client_sockets_.end();){
+        if(FD_ISSET(*client, &readfds_)){
+            memset(buffer, 0, 1024);
+             int byte_read= recv(*client, buffer, 1024, 0);
 
+            if(byte_read <= 0){
+                close(*client);
+                FD_CLR(*client, &readfds_);
+                client = client_sockets_.erase(client);
+                continue;
+            }
+            buffer[byte_read] = '\0';
+            std::cout << "Received message from client socket: "<< *client << ", bytes read:" <<byte_read << std::endl;
             for(auto other_client = client_sockets_.begin(); other_client != client_sockets_.end(); ++other_client){
                 if(*other_client != *client){
                     int sent_bytes = send(*other_client, buffer, byte_read, 0);
-
                     if(sent_bytes < 0){
                         perror("Error sending message to client");
                     }
                 }
             }
         }
-
         ++client;
     }
-
     delete []buffer;
 }
 

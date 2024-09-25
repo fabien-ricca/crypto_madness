@@ -1,9 +1,14 @@
 #include "../headers/SocketClient.h"
 #include "../headers/User.h"
+#include <cstring>
+#include <iostream>
 #include <sys/socket.h>
 #include <ctime>
 #include <sstream>
 #include <iomanip>
+#include <cmath>
+#include <vector>
+#include <algorithm>
 #define BUFFER_SIZE 1024
 
 void SocketClient::error(const char *msg){
@@ -112,7 +117,7 @@ void SocketClient::chooseOption(User *user){
     bool checkAuth = false;
 
     printf("Connexion ou inscription (/c ou /i) : ");
-    bzero(buffer, 1024);
+    memset(buffer, 0, 1024);
     fgets(buffer, 1023, stdin);
     buffer[strcspn(buffer, "\n")] = 0;
     std::string option = buffer;
@@ -120,42 +125,45 @@ void SocketClient::chooseOption(User *user){
     Credentials creds;
 
     do {
-
-
         char username[BUFFER_SIZE];
         printf("Username: ");
-        bzero(username, 1024);
-        fgets(username, 1023, stdin);
+        memset(username, 0, BUFFER_SIZE);
+        fgets(username, BUFFER_SIZE-1, stdin);
         username[strcspn(username, "\n")] = 0;
-        creds.username = username;
-
-        char password[BUFFER_SIZE];
-        printf("Password: ");
-        bzero(password, 1024);
-        fgets(password, 1023, stdin);
-        password[strcspn(password, "\n")] = 0;
-        creds.password = password;
+        std::strncpy(creds.username, username, 50);
 
         // Connexion
         if (option == "/c") {
+            char password[PASSWORD_SIZE];
+            printf("Password: ");
+            memset(password, 0, PASSWORD_SIZE);
+            fgets(password, PASSWORD_SIZE-1, stdin);
+            password[strcspn(password, "\n")] = 0;
+            std::strncpy(creds.password, password, 50);
+
             creds.option = 1;
         }
 
             // Inscription
         else if (option == "/i") {
+            char password[PASSWORD_SIZE];
+            char *passwordGood = this->AskPassword();
+            std::strncpy(password, passwordGood, PASSWORD_SIZE);
+
             creds.option = 2;
 
             char confirmPassword[BUFFER_SIZE];
             printf("Confirm password: ");
-            bzero(confirmPassword, 1024);
-            fgets(confirmPassword, 1023, stdin);
+            bzero(confirmPassword, BUFFER_SIZE);
+            fgets(confirmPassword, BUFFER_SIZE-1, stdin);
             confirmPassword[strcspn(confirmPassword, "\n")] = 0;
 
             // On vérifie que les mdp correspondent
-            if (!strcmp(password, confirmPassword) == 0) {
+            if (strcmp(password, confirmPassword) != 0) {
                 printf("Passwords are not the same !\n\n");
                 continue;
             }
+            std::strncpy(creds.password, password, PASSWORD_SIZE);
         }
 
         checkAuth = verifyUser(creds);
@@ -169,8 +177,14 @@ void SocketClient::chooseOption(User *user){
 
 bool SocketClient::verifyUser(Credentials creds) {
 
-    send(client_socket, &creds, sizeof(creds), 0);
-    recv(client_socket, &response, sizeof(response), 0);
+    if(send(client_socket, &creds, sizeof(creds), 0) < 0) {
+        std::cerr << "Problem sending packet creds to verify User. " << std::strerror(errno) << std::endl;
+    }
+    std::cout << "between sending and receiving creds" << std::endl;
+    if(recv(client_socket, &response, sizeof(response), 0) < 0) {
+        std::cerr << "Problem receiving packet creds to verify User. " << std::strerror(errno) << std::endl;
+
+    }
 
     // Le message de réussite ou d'échec sera affiché.
     std::cout << response.msg << std::endl;
@@ -178,6 +192,70 @@ bool SocketClient::verifyUser(Credentials creds) {
     return response.state;
 }
 
+char* SocketClient::AskPassword(){
+    char* password = new char[PASSWORD_SIZE];
+    while(true){
+        printf("Password: ");
+        std::fill(password, password + PASSWORD_SIZE, 0);
+        fgets(password, PASSWORD_SIZE, stdin);
+        password[strcspn(password, "\n")] = 0;
+
+
+        if (!isValidPassword(password)) {
+            std::cout << "Password must be at least 6 characters long, contain at least one uppercase letter, one lowercase letter, one digit, and one special character." << std::endl;
+            continue;
+        }
+
+
+        // si le mdp est un des 10 plus utilisés, ne pas l'accepter
+        // TODO: Peut être mettre les mdp dans un fichier csv ou txt et le parcourir,
+        //  comme ça on peut en rajouter et en enlever facilement ?
+        std::vector<const char*> mostUsed = {"123456", "123456789", "qwerty", "password", "12345",
+                                             "qwerty123", "1q2w3e", "12345678", "111111", "1234567890"};
+
+        bool isMostUsed = false;
+        for(const char* commonPassword : mostUsed){
+            if(strcmp(password, commonPassword) == 0){
+                isMostUsed = true;
+                break;
+            }
+        }
+
+        if(isMostUsed){
+            std::cout << "Your password is one of the 10 most used. Please choose another one." << std::endl;
+            continue;
+        }
+
+        // calculer l'entropie
+        double R = 94;
+        auto L = (double)strlen(password); // prendre la longueur du mdp
+
+        double E = L * log2(R);
+
+        std::cout<<E<<std::endl;
+
+        if(E > 60){
+            return password;
+        }
+        else{
+            std::cout << "Your password is weak, please choose another one." << std::endl;
+        }
+    }
+}
+
+bool SocketClient::isValidPassword(const std::string& password) {
+    if (password.length() < 6) return false;
+
+    bool hasUpper = false, hasLower = false, hasDigit = false, hasSpecial = false;
+    for (char c : password) {
+        if (std::isupper(c)) hasUpper = true;
+        else if (std::islower(c)) hasLower = true;
+        else if (std::isdigit(c)) hasDigit = true;
+        else if (std::ispunct(c)) hasSpecial = true;
+    }
+
+    return hasUpper && hasLower && hasDigit && hasSpecial;
+}
 
 
 
