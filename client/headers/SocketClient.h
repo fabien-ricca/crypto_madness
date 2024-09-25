@@ -25,6 +25,7 @@ private:
     struct hostent *server;
     char buffer[1024];
     struct Credentials response;
+    char* AskPassword();
 
 public:
     void createSocket(char *serverPort);
