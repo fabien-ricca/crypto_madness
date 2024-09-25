@@ -57,7 +57,9 @@ void SocketClient::exchangeWithHost(){
     fd_set fds;
     User *user = new User();
 
-    chooseOption(user);
+    if(user->getIsConnected() == false) {
+        chooseOption(user);
+    }
 
     while(true){
         FD_ZERO(&fds);
@@ -180,6 +182,7 @@ bool SocketClient::verifyUser(Credentials creds) {
     if(send(client_socket, &creds, sizeof(creds), 0) < 0) {
         std::cerr << "Problem sending packet creds to verify User. " << std::strerror(errno) << std::endl;
     }
+    std::cout << "between sending and receiving creds" << std::endl;
     if(recv(client_socket, &response, sizeof(response), 0) < 0) {
         std::cerr << "Problem receiving packet creds to verify User. " << std::strerror(errno) << std::endl;
 
