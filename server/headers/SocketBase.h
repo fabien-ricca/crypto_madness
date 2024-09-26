@@ -7,6 +7,16 @@
 #include <unistd.h> // This contains close
 #define INVALID_SOCKET (SOCKET)(~0)
 #define SOCKET_ERROR (-1)
+#define PASSWORD_SIZE 256
+
+struct Credentials {
+    char username[50];
+    char password[PASSWORD_SIZE];
+    int entropy;
+    bool state;
+    int option; // 1 -> connexion     2 -> inscription
+    char msg[50];
+};
 
 class SocketBase {
     private:

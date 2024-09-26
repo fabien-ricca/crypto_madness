@@ -18,10 +18,8 @@ bool User::getIsConnected(){
     return this->isConnected;
 }
 
-void User::connection(char *username){
-    // PARTIE 0 : Demander un username à chaque démarrage de connexion.
-    // Servira de base pour la connexion de la partie suivante.
-
+void User::authenticate(std::string username){
+    // PARTIE 1 : Création du user aprés authenticfication.
     this->setUsername(username);
     this->setIsConnected(true);
 }

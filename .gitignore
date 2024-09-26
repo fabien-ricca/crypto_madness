@@ -3,3 +3,4 @@ lpf_serv
 server/obj/*
 client/obj/*
 transfer/obj/*
+server/actually_safe_this_time.txt

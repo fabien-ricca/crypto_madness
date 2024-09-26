@@ -1,8 +1,13 @@
 #include "../headers/SocketServer.h"
+#include "../headers/Utils.hpp"
 #include <cerrno>
 #include <cstring>
 #include <iostream>
+#include <ostream>
+#include <string>
 #include <sys/select.h>
+#include <fstream>
+#include <unordered_map>
 
 void SocketServer::initializeSelect(){
     if(select(FD_SETSIZE +1, &readfds_, nullptr, nullptr, nullptr) < 0){
@@ -53,6 +58,111 @@ void SocketServer::prepareFds() {
     for (const auto &client : client_sockets_) {
         FD_SET(client, &readfds_);
     }
+}
+
+void SocketServer::connectClient() {
+
+    Credentials creds;
+    Utils utils = Utils();
+    std::string hashedPassword;
+
+        if(FD_ISSET(server_socket_, &readfds_)){
+            memset(&creds, 0, sizeof(creds));
+            int byte_read= recv(client_socket_, &creds, sizeof(creds), 0);
+            hashedPassword = utils.md5HashPassword(std::string(creds.password));
+
+            if(byte_read <= 0){
+                std::cerr << "Error receiving credential packet. " << std::strerror(errno);
+                close(client_socket_);
+                FD_CLR(client_socket_, &readfds_);
+            }
+
+            std::cout << "Received message from client socket: "<< client_socket_ << ", bytes read:" <<byte_read << std::endl;
+
+            // récup les infos du doc
+            std::unordered_map<std::string, std::string> credMap;
+            std::string separator = ":";
+
+            std::ifstream fichier("server/actually_safe_this_time.txt");
+            std::string line;
+
+            if(!fichier.is_open()){
+                std::cout << "erreur d'ouveruture du fichier" << std::endl;
+            }
+
+            while(std::getline(fichier, line)){
+                size_t separatorPos = line.find(separator);
+
+                if (separatorPos != std::string::npos) {
+                    std::string username = line.substr(0, separatorPos);
+                    std::string fileHashedpassword = line.substr(separatorPos + separator.length());
+                    credMap[username] = fileHashedpassword ;
+                }
+            }
+
+            bool isUsernameInFile = credMap.find(creds.username) != credMap.end();
+            // Connexion
+            if(creds.option == 1){
+                if(isUsernameInFile){
+                    if(credMap.at(creds.username) != hashedPassword){
+                        std::cout << "wrong password" << std::endl;
+                        memset(&creds, 0, sizeof(creds));
+                        std::strncpy(creds.msg, "wrong password",50);
+                        creds.state = false;
+                        if(send(client_socket_, &creds, sizeof(creds), 0)) {
+                            std::cerr << "Problem sending creds packet for wrong password" << std::strerror(errno) << std::endl;
+                            return;
+                        }
+                    }
+                    else{
+                        std::cout << "login ok" << std::endl;
+                        memset(&creds, 0, sizeof(creds));
+                        std::strncpy(creds.msg, "login ok", 50);
+                        creds.state = true;
+                        if(send(client_socket_, &creds, sizeof(creds), 0) < 0) {
+                            std::cerr << "Problem sending creds packet for login" << std::strerror(errno) << std::endl;
+                            return;
+                        }
+                    }
+                }
+                else{
+                    strcpy(creds.msg, "username not found");
+                    creds.state = false;
+                    if(send(client_socket_, &creds, sizeof(creds), 0) < 0) {
+                        std::cerr << "Problem sending creds packet for username not found" << std::strerror(errno) << std::endl;
+                        return;
+                    }
+                }
+            }
+
+            // Inscription
+            else if(creds.option == 2){
+                std::cout << creds.password << std::endl;
+                std::ofstream fichier("server/actually_safe_this_time.txt", std::ios::app);
+                if(isUsernameInFile){
+                    std::strncpy(creds.msg, "username already exists", 50);
+                    creds.state = false;
+                    if(send(client_socket_, &creds, sizeof(creds), 0) < 0) {
+                        std::cerr << "Problem sending creds packet for username already exists" << std::strerror(errno) << std::endl;
+                    }
+                }
+                if(!fichier.is_open()){
+                    std::cerr << "Erreur d'ouverture du fichier" << std::endl;
+                    std::strncpy(creds.msg, "error opening file", 50);
+                    creds.state = false;
+                }
+                else if(!isUsernameInFile){
+                    fichier << creds.username << ":" << hashedPassword << std::endl;
+                    std::strncpy(creds.msg, "registration successful", 50);
+                    creds.state = true;
+                }
+                fichier.close();
+                if(send(client_socket_, &creds, sizeof(creds), 0) < 0) {
+                    std::cerr << "Problem sending creds packet for registration" << std::strerror(errno) << std::endl;
+                }
+
+            }
+        }
 }
 
 

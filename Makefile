@@ -1,9 +1,11 @@
 
 CC = g++
 
-CFLAGS = -Wall -Werror -Wextra -g3
+LDFLAGS = -lsodium -lssl -lcrypto
 
-SRC1 = main.cpp SocketBase.cpp SocketServer.cpp
+CFLAGS = -Wall -Werror -Wextra -g3 -Wno-deprecated-declarations
+
+SRC1 = main.cpp SocketBase.cpp SocketServer.cpp Utils.cpp
 EXEC1 = srv
 OBJDIR1 = server/obj/
 SRCDIR1 = server/src/
@@ -20,10 +22,10 @@ OBJ2 = $(SRCS2:$(SRCDIR2)%.cpp=$(OBJDIR2)%.o)
 all : $(EXEC1) $(EXEC2)
 
 $(EXEC1) : $(OBJ1) $(OBJ3)
-	$(CC) -o $@ $^
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(EXEC2) : $(OBJ2) $(OBJ3)
-	$(CC) -o $@ $^
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(OBJDIR1)%.o : $(SRCDIR1)%.cpp
 	$(CC) $(CFLAGS) -c -o $@ $<

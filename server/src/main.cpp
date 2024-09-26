@@ -1,5 +1,5 @@
 #include "../headers/main.h"
-
+#include "../headers/Utils.hpp"
 
 int main(int argc, char *argv[]) {
 
@@ -11,7 +11,9 @@ int main(int argc, char *argv[]) {
 
     SocketBase socketBase =  SocketBase();
     SocketServer socketServer =  SocketServer();
+    Utils auth = Utils();
 
+    auth.createFilePassword();
     socketBase.createSocket(port);
 
     socketServer.setServerSocket(socketBase.getSocket());
@@ -24,6 +26,7 @@ int main(int argc, char *argv[]) {
         socketServer.prepareFds();
         socketServer.initializeSelect();
         socketServer.acceptConnection();
+        socketServer.connectClient();
         socketServer.communicateWithClient();
     }
 
