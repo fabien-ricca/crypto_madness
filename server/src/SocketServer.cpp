@@ -69,7 +69,7 @@ void SocketServer::connectClient() {
         if(FD_ISSET(server_socket_, &readfds_)){
             memset(&creds, 0, sizeof(creds));
             int byte_read= recv(client_socket_, &creds, sizeof(creds), 0);
-            hashedPassword = utils.md5HashPassword(std::string(creds.password));
+            hashedPassword = utils.sha256HashPassword(std::string(creds.password), nullptr);
 
             if(byte_read <= 0){
                 std::cerr << "Error receiving credential packet. " << std::strerror(errno);
@@ -96,15 +96,23 @@ void SocketServer::connectClient() {
                 if (separatorPos != std::string::npos) {
                     std::string username = line.substr(0, separatorPos);
                     std::string fileHashedpassword = line.substr(separatorPos + separator.length());
+                    std::string salt = fileHashedpassword.substr(0, 12);
                     credMap[username] = fileHashedpassword ;
                 }
             }
 
             bool isUsernameInFile = credMap.find(creds.username) != credMap.end();
+
             // Connexion
             if(creds.option == 1){
                 if(isUsernameInFile){
-                    if(credMap.at(creds.username) != hashedPassword){
+                    std::string storedPassword = credMap.at(creds.username);
+
+                    // récupérer le salt
+                    // hasher et comparer
+
+
+                    if(storedPassword != hashedPassword){
                         std::cout << "wrong password" << std::endl;
                         memset(&creds, 0, sizeof(creds));
                         std::strncpy(creds.msg, "wrong password",50);

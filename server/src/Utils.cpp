@@ -77,15 +77,47 @@ int Utils::createFilePassword() {
   }
 }
 
-std::string Utils::md5HashPassword(std::string password) {
-  unsigned char digest[MD5_DIGEST_LENGTH];
-  MD5((unsigned char *)password.c_str(), password.size(),
-      (unsigned char *)digest);
-  std::ostringstream md5string;
+std::string Utils::sha256HashPassword(std::string password, char storeSalted[12]) {
+    // 1. Générer un sel de 96 bits (12 octets)
+    unsigned char salt[12]; // 96 bits = 12 octets
+    if (storeSalted == nullptr){
+        if (RAND_bytes(salt, sizeof(salt)) != 1) {
+            throw std::runtime_error("Erreur lors de la génération du sel");
+        }
+    }
+    else{
+        memcpy(salt, storeSalted, sizeof(salt));
+    }
 
-  for (int i = 0; i < MD5_DIGEST_LENGTH; ++i) {
-    md5string << std::hex << std::setw(2) << std::setfill('0')
-              << (int)digest[i];
-  }
-  return md5string.str();
+
+    // 2. Calculer le hash SHA-256 du mot de passe concaténé avec le sel
+    unsigned char digest[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, salt, sizeof(salt));
+    SHA256_Update(&sha256, password.c_str(), password.size());
+    SHA256_Final(digest, &sha256);
+
+    // 3. Convertir le sel et le digest en base64
+    std::string saltBase64 = toBase64(salt, sizeof(salt));
+    std::string digestBase64 = toBase64(digest, SHA256_DIGEST_LENGTH);
+
+    // 4. Concaténer le sel à gauche du digest (format "sel|digest")
+    return saltBase64 + ":" + digestBase64;
+}
+
+
+std::string Utils::toBase64(const unsigned char* input, int length) {
+    BIO *b64 = BIO_new(BIO_f_base64());
+    BIO *bmem = BIO_new(BIO_s_mem());
+    b64 = BIO_push(b64, bmem);
+    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+    BIO_write(b64, input, length);
+    BIO_flush(b64);
+    BUF_MEM *bptr;
+    BIO_get_mem_ptr(b64, &bptr);
+
+    std::string output(bptr->data, bptr->length);
+    BIO_free_all(b64);
+    return output;
 }
