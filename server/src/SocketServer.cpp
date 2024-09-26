@@ -100,14 +100,10 @@ void SocketServer::connectClient() {
                 }
             }
 
-            std::cout << "work getline after" << std::endl;
-
             bool isUsernameInFile = credMap.find(creds.username) != credMap.end();
             // Connexion
-            if(creds.option == 1){ // connexion
-            std::cout << "work creds.option" << std::endl;
+            if(creds.option == 1){
                 if(isUsernameInFile){
-                    std::cout << "work if usernameInFile" << std::endl;
                     if(credMap.at(creds.username) != hashedPassword){
                         std::cout << "wrong password" << std::endl;
                         memset(&creds, 0, sizeof(creds));
