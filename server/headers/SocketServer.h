@@ -16,6 +16,14 @@
 #include <cerrno>
 #include "SocketBase.h"
 
+#define PASSWORD_SIZE 256
+
+struct DataUser {
+    std::string username;
+    std::string salt;
+    std::string password;
+};
+
 
 class SocketServer: public SocketBase {
 private:
