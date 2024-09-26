@@ -64,12 +64,9 @@ void SocketServer::connectClient() {
 
     Credentials creds;
     Utils utils = Utils();
-    std::string hashedPassword;
-
         if(FD_ISSET(server_socket_, &readfds_)){
             memset(&creds, 0, sizeof(creds));
             int byte_read= recv(client_socket_, &creds, sizeof(creds), 0);
-            hashedPassword = utils.sha256HashPassword(std::string(creds.password), nullptr);
 
             if(byte_read <= 0){
                 std::cerr << "Error receiving credential packet. " << std::strerror(errno);
@@ -90,29 +87,36 @@ void SocketServer::connectClient() {
                 std::cout << "erreur d'ouveruture du fichier" << std::endl;
             }
 
-            while(std::getline(fichier, line)){
-                size_t separatorPos = line.find(separator);
+            DataUser dataUser;
+            while (std::getline(fichier, line)) {
+                size_t firstSeparatorPos = line.find(separator);
 
-                if (separatorPos != std::string::npos) {
-                    std::string username = line.substr(0, separatorPos);
-                    std::string fileHashedpassword = line.substr(separatorPos + separator.length());
-                    std::string salt = fileHashedpassword.substr(0, 12);
-                    credMap[username] = fileHashedpassword ;
+                if (firstSeparatorPos != std::string::npos) {
+                    size_t secondSeparatorPos = line.find(separator, firstSeparatorPos + 1);
+
+                    if (secondSeparatorPos != std::string::npos) {
+                        dataUser.username = line.substr(0, firstSeparatorPos);
+
+                        if(dataUser.username == creds.username){
+                            dataUser.salt = line.substr(firstSeparatorPos + separator.length(), secondSeparatorPos - firstSeparatorPos - separator.length());
+                            dataUser.password = line.substr(secondSeparatorPos + separator.length());
+                            std::cout << "wrong password" << std::endl;
+                            break;
+                        }
+                    }
                 }
+                dataUser.username = "";
             }
 
-            bool isUsernameInFile = credMap.find(creds.username) != credMap.end();
+            bool isUsernameInFile = dataUser.username != "";
 
             // Connexion
             if(creds.option == 1){
+
                 if(isUsernameInFile){
-                    std::string storedPassword = credMap.at(creds.username);
+                    std::string connectPswd = utils.sha256HashPassword(creds.option, std::string(creds.password), dataUser.salt);
 
-                    // récupérer le salt
-                    // hasher et comparer
-
-
-                    if(storedPassword != hashedPassword){
+                    if(dataUser.password != connectPswd){
                         std::cout << "wrong password" << std::endl;
                         memset(&creds, 0, sizeof(creds));
                         std::strncpy(creds.msg, "wrong password",50);
@@ -145,7 +149,7 @@ void SocketServer::connectClient() {
 
             // Inscription
             else if(creds.option == 2){
-                std::cout << creds.password << std::endl;
+                std::string hashedPassword = utils.sha256HashPassword(creds.option ,std::string(creds.password), "");
                 std::ofstream fichier("server/actually_safe_this_time.txt", std::ios::app);
                 if(isUsernameInFile){
                     std::strncpy(creds.msg, "username already exists", 50);

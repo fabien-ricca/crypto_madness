@@ -29,8 +29,9 @@ public:
     std::string stringToHexa(const std::string& str);
     std::string getPathToExe();
     int createFilePassword();
-    std::string sha256HashPassword(std::string str, char salt[12]);
+    std::string sha256HashPassword(int option, std::string str, std::string salt);
     std::string toBase64(const unsigned char* input, int length);
+    std::string fromBase64(const std::string& input);
 
     /************GETTERs & SETTERS*************/
 

@@ -77,16 +77,17 @@ int Utils::createFilePassword() {
   }
 }
 
-std::string Utils::sha256HashPassword(std::string password, char storeSalted[12]) {
+std::string Utils::sha256HashPassword(int option, std::string password, std::string storeSalted) {
     // 1. Générer un sel de 96 bits (12 octets)
     unsigned char salt[12]; // 96 bits = 12 octets
-    if (storeSalted == nullptr){
+    if (storeSalted.empty()){
         if (RAND_bytes(salt, sizeof(salt)) != 1) {
             throw std::runtime_error("Erreur lors de la génération du sel");
         }
     }
     else{
-        memcpy(salt, storeSalted, sizeof(salt));
+        std::string saltFrom64 = fromBase64(storeSalted);
+        memcpy(salt, saltFrom64.c_str(), sizeof(salt));
     }
 
 
@@ -102,8 +103,13 @@ std::string Utils::sha256HashPassword(std::string password, char storeSalted[12]
     std::string saltBase64 = toBase64(salt, sizeof(salt));
     std::string digestBase64 = toBase64(digest, SHA256_DIGEST_LENGTH);
 
-    // 4. Concaténer le sel à gauche du digest (format "sel|digest")
-    return saltBase64 + ":" + digestBase64;
+    // 4. Concaténer le sel à gauche du digest (format "sel:digest")
+    if(option == 1){
+        return digestBase64;
+    }
+    else{
+        return saltBase64 + ":" + digestBase64;
+    }
 }
 
 
@@ -120,4 +126,17 @@ std::string Utils::toBase64(const unsigned char* input, int length) {
     std::string output(bptr->data, bptr->length);
     BIO_free_all(b64);
     return output;
+}
+
+std::string Utils::fromBase64(const std::string& input) {
+    BIO* b64 = BIO_new(BIO_f_base64());
+    BIO* bmem = BIO_new_mem_buf(input.data(), input.length());
+    b64 = BIO_push(b64, bmem);
+    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+
+    char buffer[input.length()];
+    int decodedLength = BIO_read(b64, buffer, input.length());
+    BIO_free_all(b64);
+
+    return std::string(buffer, decodedLength);
 }
